@@ -16,7 +16,8 @@
     }
   },
   "require": {
-    "nategood/httpful": "*"
+    "nategood/httpful": "*",
+    "ext-curl": "*"
   },
   "require-dev": {
     "phpunit/phpunit": "^6.5"

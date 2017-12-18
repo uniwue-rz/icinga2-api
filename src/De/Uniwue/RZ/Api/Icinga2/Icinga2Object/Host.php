@@ -9,20 +9,11 @@
 namespace De\Uniwue\RZ\Api\Icinga2\Icinga2Object;
 
 
-class Host implements Icinga2Object
+class Host extends Icinga2Object implements Icinga2ObjectInterface
 {
-    public function getAddress()
-    {
-        // TODO: Implement getAddress() method.
-    }
-
     public function getChildren()
     {
         // TODO: Implement getChildren() method.
     }
 
-    public function getName()
-    {
-        // TODO: Implement getName() method.
-    }
 }

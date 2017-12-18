@@ -17,6 +17,8 @@ class Icinga2Test extends TestCase
 {
     private $config;
 
+    private $hostData;
+
     /**
      * Setup for the Test
      *
@@ -24,7 +26,9 @@ class Icinga2Test extends TestCase
     public function setUp()
     {
         global $apiConfig;
+        global $hostData;
         $this->config = $apiConfig;
+        $this->hostData = $hostData;
     }
 
     /**
@@ -125,5 +129,17 @@ class Icinga2Test extends TestCase
         $logger = new Logger();
         $icinga2 = new Icinga2($this->config, $logger);
         $this->assertTrue(sizeof($icinga2->getAllServices()) > 0);
+    }
+
+    /**
+     * Test the get hosts
+     *
+     * @throws \Httpful\Exception\ConnectionErrorException
+     */
+    public function testGetHosts()
+    {
+        $logger = new Logger();
+        $icinga2 = new Icinga2($this->config, $logger);
+        $this->assertEquals(sizeof($icinga2->getHosts(array("match(\"" . $this->hostData["hostname"] . "*\",host.name)"))), 1);
     }
 }

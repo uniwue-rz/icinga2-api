@@ -15,6 +15,12 @@ namespace De\Uniwue\RZ\Api\Icinga2;
 use De\Uniwue\RZ\Api\Exception\InvalidConfigurationException;
 use De\Uniwue\RZ\Api\Exception\ServerNotReachableException;
 use De\Uniwue\RZ\Api\Exception\SeverNotAccessibleException;
+use De\Uniwue\RZ\Api\Icinga2\Auth\CertificateAuth;
+use De\Uniwue\RZ\Api\Icinga2\Auth\PasswordAuth;
+use De\Uniwue\RZ\Api\Icinga2\Icinga2Object\Host;
+use De\Uniwue\RZ\Api\Icinga2\Icinga2Object\Service;
+use De\Uniwue\RZ\Api\Icinga2\Query\Query;
+
 use Httpful\Request;
 use Httpful\Response;
 
@@ -102,7 +108,9 @@ class Icinga2
      */
     public function serverAuthenticable()
     {
-        $response = $this->sendQuery(true, "v1");
+        $query = new Query($this->config["host"], $this->config["port"], "v1");
+        $request = $this->authenticate($query->getRequest());
+        $response = $request->send();
         if ($response->code !== 200) {
             throw new SeverNotAccessibleException("Your authentication is not valid for login or you don't have permissions");
         }
@@ -110,36 +118,24 @@ class Icinga2
     }
 
     /**
-     * Sends the query to the server and return the response
+     * Authenticates the given request
      *
-     * @param bool $withHttps If the query sent with https
-     * @param string $path The path that should get the query
-     * @param array $params The parameters that should be sent to the server
+     * @param Request $request
      *
-     * @return Response
-     *
-     * @throws \Httpful\Exception\ConnectionErrorException
+     * @return Request
      */
-    public function sendQuery($withHttps = true, $path = "", $params = array())
+    public function authenticate(Request $request)
     {
         if (isset($this->config["user"]) === true && isset($this->config["password"]) === true) {
-            $this->log("info", "logging in using username and password auth with path '$path'");
-            $response = Request::get($this->createUri($withHttps, $path))
-                ->authenticateWithBasic($this->config["user"], $this->config["password"])
-                ->followRedirects()
-                ->send();
-            return $response;
+            $passwordAuth = new PasswordAuth($this->config["username"], $this->config["password"]);
+            return $passwordAuth->authenticate($request);
         } elseif (isset($this->config["cert"]) === true && isset($this->config["key"]) === true) {
-            $this->log("info", "logging in using certificate and keys with path '$path'");
-            $response = Request::get($this->createUri($withHttps, $path))
-                ->authenticateWithCert($this->config["cert"], $this->config["key"])
-                ->followRedirects()
-                ->send();
-            return $response;
+            $certAuth = new CertificateAuth($this->config["cert"], $this->config["key"]);
+            return $certAuth->authenticate($request);
         }
-
         return null;
     }
+
 
     /**
      * Returns the available
@@ -148,47 +144,27 @@ class Icinga2
      *
      * @return array
      *
-     * @throws SeverNotAccessibleException
      * @throws \Httpful\Exception\ConnectionErrorException
      */
     public function getPermissions($withHttps = true)
     {
         $result = array();
-        $authenticable = $this->serverAuthenticable();
-        if ($authenticable === true) {
-            $response = $this->sendQuery($withHttps, "v1");
-            $content = $response->body;
-            if ($content !== null) {
-                $dom = new \DOMDocument();
-                $dom->loadHTML($content);
-                $permissionNodes = $dom->getElementsByTagName('li');
-                if ($permissionNodes->length > 0) {
-                    for ($i = 0; $i < $permissionNodes->length; $i++) {
-                        array_push($result, $permissionNodes->item($i)->nodeValue);
-                    }
+        $query = new Query($this->config["host"], $this->config["port"], "v1");
+        $request = $this->authenticate($query->getRequest());
+        $response = $request->send();
+        $content = $response->body;
+        if ($content !== null) {
+            $dom = new \DOMDocument();
+            $dom->loadHTML($content);
+            $permissionNodes = $dom->getElementsByTagName('li');
+            if ($permissionNodes->length > 0) {
+                for ($i = 0; $i < $permissionNodes->length; $i++) {
+                    array_push($result, $permissionNodes->item($i)->nodeValue);
                 }
             }
         }
         return $result;
     }
-
-    /**
-     * Creates a uri from the given host and port
-     *
-     * @param bool $withHttps If the uri should get https scheme
-     * @param string $path The path that should be used to create the uri
-     *
-     * @return string
-     */
-    public function createUri($withHttps = true, $path = "")
-    {
-        $uri = $this->config["host"] . ":" . $this->config["port"] . "/" . $path;
-        if ($withHttps === true) {
-            return "https://" . $uri;
-        }
-        return "http://" . $uri;
-    }
-
 
     /**
      * Returns all the existing hosts
@@ -197,70 +173,139 @@ class Icinga2
      *
      * @return array
      *
-     * @throws SeverNotAccessibleException
      * @throws \Httpful\Exception\ConnectionErrorException
      */
     public function getAllHosts($withHttps = true)
     {
-        $authenticable = $this->serverAuthenticable();
-        if($authenticable == true){
-            $response = $this->sendQuery($withHttps, "v1/objects/hosts");
-            if($response->code === 200){
-                $decodedResponse = json_decode($response,true);
-                return $decodedResponse;
-            }
+        $result = array();
+        $query = new Query($this->config["host"], $this->config["port"], "v1/objects/services");
+        $request = $this->authenticate($query->getRequest());
+        $response = $request->send();
+        if ($response->code === 200) {
+            $result = $this->decodeResult($response, "host");
         }
-
-        return array();
+        return $result;
     }
 
     /**
-     * Returns the list of all Services
+     * Returns the list of all existing services
      *
      * @param bool $withHttps
      *
      * @return array
      *
-     * @throws SeverNotAccessibleException
      * @throws \Httpful\Exception\ConnectionErrorException
      */
     public function getAllServices($withHttps = true)
     {
-        $authenticable = $this->serverAuthenticable();
-        if($authenticable == true){
-            $response = $this->sendQuery($withHttps, "v1/objects/services");
-            if($response->code === 200){
-                $decodedResponse = json_decode($response,true);
-                return $decodedResponse;
-            }
+        $result = array();
+        $query = new Query($this->config["host"], $this->config["port"], "v1/objects/services");
+        $request = $this->authenticate($query->getRequest());
+        $response = $request->send();
+        if ($response->code === 200) {
+            $result = $this->decodeResult($response, "service");
+        }
+        return $result;
+    }
+
+    /**
+     * Returns the list of hosts that match the given filter and attributes and joins
+     *
+     * @param array $filter
+     * @param array $attrs
+     * @param array $joins
+     *
+     * @return array
+     *
+     * @throws \Httpful\Exception\ConnectionErrorException
+     */
+    public function getHosts($filter = array(), $attrs = array(), $joins = array())
+    {
+        $result = array();
+        $query = new Query($this->config["host"], $this->config["port"], "v1/objects/hosts", true, "POST");
+        $query->setFilters($filter);
+        $query->setAttributes($attrs);
+        $query->setJoins($joins);
+        $request = $this->authenticate($query->getRequest());
+        $request->addHeaders(array("Accept" => "application/json", "X-HTTP-Method-Override" => "GET"));
+        $response = $request->send();
+        if ($response->code === 200) {
+            $result = $this->decodeResult($response, "host");
         }
 
-        return array();
+        return $result;
     }
 
     /**
-     * Returns the list of hosts that match the given filter array.
-     * The filters here will be converted to
+     * Returns the list of services that match the given filter, attributes and joins
      *
      * @param array $filter
+     * @param array $attrs
+     * @param array $joins
      *
      * @return array
+     *
+     * @throws \Httpful\Exception\ConnectionErrorException
      */
-    public function getHosts($filter = array())
+    public function getServices($filter = array(), $attrs = array(), $joins = array())
     {
-        $filterJson = json_encode($filter);
+        $result = array();
+        $query = new Query($this->config["host"], $this->config["port"], "v1/objects/services", true, "POST");
+        $query->setFilters($filter);
+        $query->setAttributes($attrs);
+        $query->setJoins($joins);
+        $request = $this->authenticate($query->getRequest());
+        $request->addHeaders(array("Accept" => "application/json", "X-HTTP-Method-Override" => "GET"));
+        $response = $request->send();
+        if ($response->code === 200) {
+            $result = $this->decodeResult($response, "host");
+        }
 
+        return $result;
     }
 
     /**
-     * Returns the list of services that match the given filter array
+     * Decodes the response to the internal objects
      *
-     * @param array $filter
+     * @param Response $response
+     * @param $type
      *
      * @return array
      */
-    public function getServices($filter = array())
+    public function decodeResult(Response $response, $type)
     {
-
+        $result = array();
+        $decodedResponse = json_decode($response, true);
+        if (isset($decodedResponse["results"]) & sizeof($decodedResponse["results"]) > 0) {
+            foreach ($decodedResponse["results"] as $icingaRow) {
+                switch ($type) {
+                    case "host":
+                        $icingaObject = new Host(
+                            $icingaRow["name"],
+                            $icingaRow["type"],
+                            $icingaRow["attrs"],
+                            $icingaRow["meta"],
+                            $icingaRow["joins"]
+                        );
+                        break;
+                    case "service":
+                        $icingaObject = new Host(
+                            $icingaRow["name"],
+                            $icingaRow["type"],
+                            $icingaRow["attrs"],
+                            $icingaRow["meta"],
+                            $icingaRow["joins"]
+                        );
+                        break;
+                    default:
+                        $icingaObject = null;
+                        break;
+                }
+                if ($icingaObject !== null) {
+                    array_push($result, $icingaObject);
+                }
+            }
+        }
+        return $result;
     }
 }

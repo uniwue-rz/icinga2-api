@@ -7,6 +7,11 @@ include 'vendor/autoload.php';
 global $configRoot;
 
 /**
+ * Placeholder for the host data that is used
+ * @var array
+ */
+global $hostData;
+/**
  * Placeholder for the api configuration
  * @var array
  */
@@ -23,4 +28,9 @@ $apiConfig = array(
     "ca" => $_ENV["ICINGA2CAPATH"],
     "keyPassword" => $_ENV["ICINGA2KEYPASSWORD"]
 );
+
+$hostData = array(
+    "hostname" => "wueaddress.uni-wuerzburg.de"
+);
+
 $configRoot = __DIR__;

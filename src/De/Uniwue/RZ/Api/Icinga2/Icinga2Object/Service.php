@@ -9,21 +9,10 @@
 namespace De\Uniwue\RZ\Api\Icinga2\Icinga2Object;
 
 
-class Service implements Icinga2Object
+class Service extends Icinga2Object implements Icinga2ObjectInterface
 {
-
-    public function getName()
-    {
-        // TODO: Implement getName() method.
-    }
-
-    public function getAddress()
-    {
-        // TODO: Implement getAddress() method.
-    }
 
     public function getChildren()
     {
-        // TODO: Implement getChildren() method.
     }
 }

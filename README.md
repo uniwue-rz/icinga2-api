@@ -9,7 +9,7 @@ too.
 To use this client simply add it to your package requirements with composer:
 
 ```lang=bash
-composer require rzuw/icinga2-api
+composer require rzuw/icinga2
 ```
 
 ## Configuration for Client

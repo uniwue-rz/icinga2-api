@@ -1,0 +1,6 @@
+# ChangeLog
+
+## [0.0.1] 19-12-2017
+
+- First version with basic query functionality.
+- Support for both Certificate and Password Auth.

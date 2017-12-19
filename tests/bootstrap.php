@@ -30,7 +30,8 @@ $apiConfig = array(
 );
 
 $hostData = array(
-    "hostname" => "wueaddress.uni-wuerzburg.de"
+    "hostname" => "wueaddress.uni-wuerzburg.de",
+    "display_name" => "WueAddress"
 );
 
 $configRoot = __DIR__;

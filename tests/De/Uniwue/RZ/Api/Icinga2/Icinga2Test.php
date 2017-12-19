@@ -43,7 +43,6 @@ class Icinga2Test extends TestCase
     /**
      * Tests the server reachable with good data
      *
-     * @throws \De\Uniwue\RZ\Api\Exception\InvalidConfigurationException
      * @throws \De\Uniwue\RZ\Api\Exception\ServerNotReachableException
      */
     public function testServerReachable()
@@ -95,7 +94,6 @@ class Icinga2Test extends TestCase
     /**
      * Tests the get permissions
      *
-     * @throws \De\Uniwue\RZ\Api\Exception\SeverNotAccessibleException
      * @throws \Httpful\Exception\ConnectionErrorException
      */
     public function testGetPermissions()
@@ -108,7 +106,6 @@ class Icinga2Test extends TestCase
     /**
      * Tests get all hosts
      *
-     * @throws \De\Uniwue\RZ\Api\Exception\SeverNotAccessibleException
      * @throws \Httpful\Exception\ConnectionErrorException
      */
     public function testGetAllHosts()
@@ -121,7 +118,6 @@ class Icinga2Test extends TestCase
     /**
      * Tests the get all Services
      *
-     * @throws \De\Uniwue\RZ\Api\Exception\SeverNotAccessibleException
      * @throws \Httpful\Exception\ConnectionErrorException
      */
     public function testGetAllServices()
@@ -136,10 +132,22 @@ class Icinga2Test extends TestCase
      *
      * @throws \Httpful\Exception\ConnectionErrorException
      */
-    public function testGetHosts()
+    public function testGetHostsWithFilter()
     {
         $logger = new Logger();
         $icinga2 = new Icinga2($this->config, $logger);
         $this->assertEquals(sizeof($icinga2->getHosts(array("match(\"" . $this->hostData["hostname"] . "*\",host.name)"))), 1);
+    }
+
+    /**
+     * Tests the get hosts with attributes
+     *
+     * @throws \Httpful\Exception\ConnectionErrorException
+     */
+    public function testGetHostsWithAttrs(){
+        $logger = new Logger();
+        $icinga2 = new Icinga2($this->config, $logger);
+        $result = $icinga2->getHosts(array("match(\"" . $this->hostData["hostname"] . "*\",host.name)"), array("display_name", "name"));
+        $this->assertEquals($result[0]->getAttribute("display_name"), $this->hostData["display_name"]);
     }
 }

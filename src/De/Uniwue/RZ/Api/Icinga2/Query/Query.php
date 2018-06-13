@@ -314,7 +314,7 @@ class Query
                 $request = Request::get($this->getUri());
                 break;
             case "POST":
-                $request = Request::post($this->getUri(), $this->getQueryData(true, "application/json"));
+                $request = Request::post($this->getUri(), $this->getQueryData(true), "application/json");
                 break;
             case "PUT":
                 $request = Request::put($this->getUri(), $this->getInitData());
@@ -352,7 +352,16 @@ class Query
         if ($inJson) {
             return json_encode($data);
         }
-        return http_build_query($data);
+        
+        $uri = '';
+        foreach($data as $key => $values) {
+            
+            foreach($values as $value) {
+                $uri .= '&'.$key.'[]='.urlencode($value);
+            }
+        }
+        
+        return ltrim($uri, '&');
     }
 
     /**

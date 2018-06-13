@@ -178,7 +178,7 @@ class Icinga2
     public function getAllHosts($withHttps = true)
     {
         $result = array();
-        $query = new Query($this->config["host"], $this->config["port"], "v1/objects/services");
+        $query = new Query($this->config["host"], $this->config["port"], "v1/objects/hosts");
         $request = $this->authenticate($query->getRequest());
         $response = $request->send();
         if ($response->code === 200) {

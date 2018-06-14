@@ -17,6 +17,7 @@ use De\Uniwue\RZ\Api\Exception\ServerNotReachableException;
 use De\Uniwue\RZ\Api\Exception\SeverNotAccessibleException;
 use De\Uniwue\RZ\Api\Icinga2\Auth\CertificateAuth;
 use De\Uniwue\RZ\Api\Icinga2\Auth\PasswordAuth;
+use De\Uniwue\RZ\Api\Icinga2\Icinga2Object\Comment;
 use De\Uniwue\RZ\Api\Icinga2\Icinga2Object\Host;
 use De\Uniwue\RZ\Api\Icinga2\Icinga2Object\Service;
 use De\Uniwue\RZ\Api\Icinga2\Query\Query;
@@ -209,6 +210,122 @@ class Icinga2
     }
 
     /**
+     * Returns the list of all comments
+     *
+     * @param bool $withHttps
+     *
+     * @return array
+     *
+     * @throws \Httpful\Exception\ConnectionErrorException
+     */
+    public function getAllComments($withHttps = true)
+    {
+        $result = [];
+        $query = new Query($this->config["host"], $this->config["port"], "v1/objects/comments", $withHttps);
+        $request = $this->authenticate($query->getRequest());
+        $response = $request->send();
+        
+        if ($response->code === 200) {
+            $result = $this->decodeResult($response, "comment");
+        }
+        
+        return $result;
+    }
+
+    /**
+     * Returns list of comments based on filter provided
+     *
+     * @param array $filter
+     * @param array $attrs
+     * @param array $joins
+     * @param bool $withHttps
+     *
+     * @return array
+     *
+     * @throws \Httpful\Exception\ConnectionErrorException
+     */
+    public function getComments($filter = [], $attrs = [], $joins = [], $withHttps = true)
+    {
+        $result = [];
+        $query = new Query($this->config["host"], $this->config["port"], "v1/objects/comments", $withHttps, "POST");
+        $query->setFilters($filter);
+        $query->setAttributes($attrs);
+        $query->setJoins($joins);
+        $request = $this->authenticate($query->getRequest());
+        $request->addHeaders(array("Accept" => "application/json", "X-HTTP-Method-Override" => "GET"));
+        $response = $request->send();
+        if ($response->code === 200) {
+            $result = $this->decodeResult($response, "comment");
+        }
+        return $result;
+    }
+
+    /**
+     * Returns ack of a host
+     *
+     * @param string $hostName
+     * @param bool $withHttps
+     *
+     * @return array
+     *
+     * @throws \Httpful\Exception\ConnectionErrorException
+     */
+    public function getHostAcknowledgement($hostName = false, $withHttps = true)
+    {
+        
+        $joins = [
+            "host.name", 
+            "host.acknowledgement", 
+            "host.acknowledgement_expiry",
+        ];
+        
+        $filterString = 'comment.entry_type==4 && comment.service_name==""';
+        
+        if($hostName !== false) {
+            $filterString .= ' && host.name=="'.$hostName.'"';
+        }
+        
+        $filter = [
+            $filterString
+        ];
+        
+        return $this->getComments($filter, [], $joins, $withHttps);
+    }
+
+    /**
+     * Returns ack of a service
+     *
+     * @param string $serviceName
+     * @param bool $withHttps
+     *
+     * @return array
+     *
+     * @throws \Httpful\Exception\ConnectionErrorException
+     */
+    public function getServiceAcknowledgement($serviceName = false, $withHttps = true)
+    {
+        
+        $joins = [
+            "service.__name", 
+            "service.name", 
+            "service.acknowledgement", 
+            "service.acknowledgement_expiry"
+        ];
+        
+        $filterString = 'service.acknowledgement!=0 && comment.entry_type==4';
+        
+        if($serviceName !== false) {
+            $filterString .= ' && service.__name=="'.$serviceName.'"';
+        }
+        
+        $filter = [
+            $filterString
+        ];
+        
+        return $this->getComments($filter, [], $joins, $withHttps);
+    }
+
+    /**
      * Returns the list of hosts that match the given filter and attributes and joins
      *
      * @param array $filter
@@ -289,7 +406,16 @@ class Icinga2
                         );
                         break;
                     case "service":
-                        $icingaObject = new Host(
+                        $icingaObject = new Service(
+                            $icingaRow["name"],
+                            $icingaRow["type"],
+                            $icingaRow["attrs"],
+                            $icingaRow["meta"],
+                            $icingaRow["joins"]
+                        );
+                        break;
+                    case "comment":
+                        $icingaObject = new Comment(
                             $icingaRow["name"],
                             $icingaRow["type"],
                             $icingaRow["attrs"],

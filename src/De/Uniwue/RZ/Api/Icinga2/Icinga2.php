@@ -80,6 +80,10 @@ class Icinga2
         if (isset($this->config["port"]) === false) {
             throw new InvalidConfigurationException("Port is not set in configuration");
         }
+        
+        if(!isset($this->config['timeout']) || !is_numeric($this->config['timeout'])) {
+            $this->config['timeout'] = 30;
+        }
     }
 
     /**
@@ -91,7 +95,7 @@ class Icinga2
      */
     public function serverReachable()
     {
-        if ($socket = @fsockopen($this->config["host"], $this->config["port"], $errno, $errstr, 30)) {
+        if ($socket = @fsockopen($this->config["host"], $this->config["port"], $errno, $errstr, $this->config['timeout'])) {
             fclose($socket);
             return true;
         } else {
@@ -128,7 +132,7 @@ class Icinga2
     public function authenticate(Request $request)
     {
         if (isset($this->config["user"]) === true && isset($this->config["password"]) === true) {
-            $passwordAuth = new PasswordAuth($this->config["username"], $this->config["password"]);
+            $passwordAuth = new PasswordAuth($this->config["user"], $this->config["password"]);
             return $passwordAuth->authenticate($request);
         } elseif (isset($this->config["cert"]) === true && isset($this->config["key"]) === true) {
             $certAuth = new CertificateAuth($this->config["cert"], $this->config["key"]);

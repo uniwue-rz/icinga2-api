@@ -1,5 +1,10 @@
 # ChangeLog
 
+## [0.0.3] 15-06-2018
+
+- PR Daniel Ylitalo <daniel.ylitalo@devinix.se>
+- Removed the composer.phar file
+
 ## [0.0.2] 19-12-2017
 
 - Update to README

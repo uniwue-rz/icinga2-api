@@ -19,6 +19,7 @@ use De\Uniwue\RZ\Api\Icinga2\Auth\CertificateAuth;
 use De\Uniwue\RZ\Api\Icinga2\Auth\PasswordAuth;
 use De\Uniwue\RZ\Api\Icinga2\Icinga2Object\Comment;
 use De\Uniwue\RZ\Api\Icinga2\Icinga2Object\Host;
+use De\Uniwue\RZ\Api\Icinga2\Icinga2Object\Icinga2ObjectInterface;
 use De\Uniwue\RZ\Api\Icinga2\Icinga2Object\Service;
 use De\Uniwue\RZ\Api\Icinga2\Query\Query;
 
@@ -176,7 +177,7 @@ class Icinga2
      *
      * @param bool $withHttps
      *
-     * @return array
+     * @return Host[]
      *
      * @throws \Httpful\Exception\ConnectionErrorException
      */
@@ -197,7 +198,7 @@ class Icinga2
      *
      * @param bool $withHttps
      *
-     * @return array
+     * @return Service[]
      *
      * @throws \Httpful\Exception\ConnectionErrorException
      */
@@ -218,7 +219,7 @@ class Icinga2
      *
      * @param bool $withHttps
      *
-     * @return array
+     * @return Comment[]
      *
      * @throws \Httpful\Exception\ConnectionErrorException
      */
@@ -244,7 +245,7 @@ class Icinga2
      * @param array $joins
      * @param bool $withHttps
      *
-     * @return array
+     * @return Comment[]
      *
      * @throws \Httpful\Exception\ConnectionErrorException
      */
@@ -333,10 +334,11 @@ class Icinga2
      * Returns the list of hosts that match the given filter and attributes and joins
      *
      * @param array $filter
+     *   As documented at https://icinga.com/docs/icinga2/latest/doc/12-icinga2-api/#filters
      * @param array $attrs
      * @param array $joins
      *
-     * @return array
+     * @return Host[]
      *
      * @throws \Httpful\Exception\ConnectionErrorException
      */
@@ -364,7 +366,7 @@ class Icinga2
      * @param array $attrs
      * @param array $joins
      *
-     * @return array
+     * @return Service[]
      *
      * @throws \Httpful\Exception\ConnectionErrorException
      */
@@ -391,7 +393,7 @@ class Icinga2
      * @param Response $response
      * @param $type
      *
-     * @return array
+     * @return Icinga2ObjectInterface[]
      */
     public function decodeResult(Response $response, $type)
     {

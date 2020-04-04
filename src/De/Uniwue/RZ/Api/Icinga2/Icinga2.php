@@ -381,7 +381,7 @@ class Icinga2
         $request->addHeaders(array("Accept" => "application/json", "X-HTTP-Method-Override" => "GET"));
         $response = $request->send();
         if ($response->code === 200) {
-            $result = $this->decodeResult($response, "host");
+            $result = $this->decodeResult($response, "service");
         }
 
         return $result;

@@ -1,8 +1,7 @@
 # Icinga2 Api Client for PHP
 
-This is a simple api client for Icinga2 written in PHP. At the moment it has only
-read functions. In the future it will be capable of writing to Icinga2
-too.
+This is a simple api client for Icinga2 written in PHP. At the moment it has mostly
+read functions. The only writing function is Service::processCheckResult().
 
 ## Installation
 

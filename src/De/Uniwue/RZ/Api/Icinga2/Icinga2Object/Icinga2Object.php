@@ -9,6 +9,8 @@
 namespace De\Uniwue\RZ\Api\Icinga2\Icinga2Object;
 
 
+use De\Uniwue\RZ\Api\Icinga2\Icinga2;
+
 class Icinga2Object
 {
     /**
@@ -37,17 +39,25 @@ class Icinga2Object
     private $type;
 
     /**
+     * @var \De\Uniwue\RZ\Api\Icinga2\Icinga2 
+     */
+    protected $icinga2;
+
+    /**
      * Icinga2Object constructor.
+     *
      * @param string $name The name of the given Icinga2Object
      * @param string $type The type of the given Icinga2Object
+     * @param \De\Uniwue\RZ\Api\Icinga2\Icinga2 $icinga2
      * @param array $attributes The attributes for the given Icinga2Object
      * @param array $meta The meta information for the given Icinga2Object
      * @param array $joins The joins for the given query result
      */
-    public function __construct($name, $type, $attributes = array(), $meta = array(), $joins = array())
+    public function __construct($name, $type, Icinga2 $icinga2, $attributes = array(), $meta = array(), $joins = array())
     {
         $this->name = $name;
         $this->type = $type;
+        $this->icinga2 = $icinga2;
         $this->attributes = $attributes;
         $this->meta = $meta;
         $this->joins = $joins;

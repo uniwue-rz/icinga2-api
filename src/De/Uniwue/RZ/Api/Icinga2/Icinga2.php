@@ -1,8 +1,7 @@
 <?php
 
 /**
- * Icinga2 Class is the main API interface for the icinga library. At the moment only reads from the server is
- * possible.
+ * Icinga2 Class is the main API interface for this library.
  *
  * Created by PhpStorm.
  * User: poa32kc
@@ -391,6 +390,7 @@ class Icinga2
                 $params = array(
                     $icingaRow["name"],
                     $icingaRow["type"],
+                    $this,
                     $icingaRow["attrs"],
                     $icingaRow["meta"],
                     $icingaRow["joins"]

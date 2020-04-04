@@ -274,21 +274,21 @@ class Icinga2
     {
         
         $joins = [
-            "host.name", 
-            "host.acknowledgement", 
+            "host.name",
+            "host.acknowledgement",
             "host.acknowledgement_expiry",
         ];
-        
+
         $filterString = 'comment.entry_type==4 && comment.service_name==""';
-        
-        if($hostName !== false) {
-            $filterString .= ' && host.name=="'.$hostName.'"';
+
+        if ($hostName !== false) {
+            $filterString .= ' && host.name=="' . $hostName . '"';
         }
-        
+
         $filter = [
             $filterString
         ];
-        
+
         return $this->getComments($filter, [], $joins, $withHttps);
     }
 

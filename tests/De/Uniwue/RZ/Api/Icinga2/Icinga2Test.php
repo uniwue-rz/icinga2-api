@@ -136,7 +136,7 @@ class Icinga2Test extends TestCase
     {
         $logger = new Logger();
         $icinga2 = new Icinga2($this->config, $logger);
-        $this->assertEquals(sizeof($icinga2->getHosts(array("match(\"" . $this->hostData["hostname"] . "*\",host.name)"))), 1);
+        $this->assertEquals(sizeof($icinga2->getHosts(array("match(\"" . $this->hostData["hostname"] . "*\", host.name)"))), 1);
     }
 
     /**
@@ -147,7 +147,7 @@ class Icinga2Test extends TestCase
     public function testGetHostsWithAttrs(){
         $logger = new Logger();
         $icinga2 = new Icinga2($this->config, $logger);
-        $result = $icinga2->getHosts(array("match(\"" . $this->hostData["hostname"] . "*\",host.name)"), array("display_name", "name"));
+        $result = $icinga2->getHosts(array("match(\"" . $this->hostData["hostname"] . "*\", host.name)"), array("display_name", "name"));
         $this->assertEquals($result[0]->getAttribute("display_name"), $this->hostData["display_name"]);
     }
 }

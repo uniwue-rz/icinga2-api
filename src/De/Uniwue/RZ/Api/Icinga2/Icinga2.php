@@ -1,8 +1,7 @@
 <?php
 
 /**
- * Icinga2 Class is the main API interface for the icinga library. At the moment only reads from the server is
- * possible.
+ * Icinga2 Class is the main API interface for this library.
  *
  * Created by PhpStorm.
  * User: poa32kc
@@ -19,6 +18,7 @@ use De\Uniwue\RZ\Api\Icinga2\Auth\CertificateAuth;
 use De\Uniwue\RZ\Api\Icinga2\Auth\PasswordAuth;
 use De\Uniwue\RZ\Api\Icinga2\Icinga2Object\Comment;
 use De\Uniwue\RZ\Api\Icinga2\Icinga2Object\Host;
+use De\Uniwue\RZ\Api\Icinga2\Icinga2Object\Icinga2ObjectInterface;
 use De\Uniwue\RZ\Api\Icinga2\Icinga2Object\Service;
 use De\Uniwue\RZ\Api\Icinga2\Query\Query;
 
@@ -176,7 +176,7 @@ class Icinga2
      *
      * @param bool $withHttps
      *
-     * @return array
+     * @return Host[]
      *
      * @throws \Httpful\Exception\ConnectionErrorException
      */
@@ -197,7 +197,7 @@ class Icinga2
      *
      * @param bool $withHttps
      *
-     * @return array
+     * @return Service[]
      *
      * @throws \Httpful\Exception\ConnectionErrorException
      */
@@ -218,7 +218,7 @@ class Icinga2
      *
      * @param bool $withHttps
      *
-     * @return array
+     * @return Comment[]
      *
      * @throws \Httpful\Exception\ConnectionErrorException
      */
@@ -242,21 +242,16 @@ class Icinga2
      * @param array $filter
      * @param array $attrs
      * @param array $joins
-     * @param bool $withHttps
      *
-     * @return array
+     * @return Comment[]
      *
      * @throws \Httpful\Exception\ConnectionErrorException
      */
-    public function getComments($filter = [], $attrs = [], $joins = [], $withHttps = true)
+    public function getComments($filter = [], $attrs = [], $joins = [])
     {
         $result = [];
-        $query = new Query($this->config["host"], $this->config["port"], "v1/objects/comments", $withHttps, "POST");
-        $query->setFilters($filter);
-        $query->setAttributes($attrs);
-        $query->setJoins($joins);
-        $request = $this->authenticate($query->getRequest());
-        $request->addHeaders(array("Accept" => "application/json", "X-HTTP-Method-Override" => "GET"));
+        $request = $this->buildRequest("v1/objects/comments", $filter, $attrs, $joins);
+        $request->addHeader('X-HTTP-Method-Override', 'GET');
         $response = $request->send();
         if ($response->code === 200) {
             $result = $this->decodeResult($response, "comment");
@@ -278,21 +273,21 @@ class Icinga2
     {
         
         $joins = [
-            "host.name", 
-            "host.acknowledgement", 
+            "host.name",
+            "host.acknowledgement",
             "host.acknowledgement_expiry",
         ];
-        
+
         $filterString = 'comment.entry_type==4 && comment.service_name==""';
-        
-        if($hostName !== false) {
-            $filterString .= ' && host.name=="'.$hostName.'"';
+
+        if ($hostName !== false) {
+            $filterString .= ' && host.name=="' . $hostName . '"';
         }
-        
+
         $filter = [
             $filterString
         ];
-        
+
         return $this->getComments($filter, [], $joins, $withHttps);
     }
 
@@ -333,22 +328,19 @@ class Icinga2
      * Returns the list of hosts that match the given filter and attributes and joins
      *
      * @param array $filter
+     *   As documented at https://icinga.com/docs/icinga2/latest/doc/12-icinga2-api/#filters
      * @param array $attrs
      * @param array $joins
      *
-     * @return array
+     * @return Host[]
      *
      * @throws \Httpful\Exception\ConnectionErrorException
      */
     public function getHosts($filter = array(), $attrs = array(), $joins = array())
     {
         $result = array();
-        $query = new Query($this->config["host"], $this->config["port"], "v1/objects/hosts", true, "POST");
-        $query->setFilters($filter);
-        $query->setAttributes($attrs);
-        $query->setJoins($joins);
-        $request = $this->authenticate($query->getRequest());
-        $request->addHeaders(array("Accept" => "application/json", "X-HTTP-Method-Override" => "GET"));
+        $request = $this->buildRequest("v1/objects/hosts", $filter, $attrs, $joins);
+        $request->addHeader('X-HTTP-Method-Override', 'GET');
         $response = $request->send();
         if ($response->code === 200) {
             $result = $this->decodeResult($response, "host");
@@ -364,22 +356,18 @@ class Icinga2
      * @param array $attrs
      * @param array $joins
      *
-     * @return array
+     * @return Service[]
      *
      * @throws \Httpful\Exception\ConnectionErrorException
      */
     public function getServices($filter = array(), $attrs = array(), $joins = array())
     {
         $result = array();
-        $query = new Query($this->config["host"], $this->config["port"], "v1/objects/services", true, "POST");
-        $query->setFilters($filter);
-        $query->setAttributes($attrs);
-        $query->setJoins($joins);
-        $request = $this->authenticate($query->getRequest());
-        $request->addHeaders(array("Accept" => "application/json", "X-HTTP-Method-Override" => "GET"));
+        $request = $this->buildRequest("v1/objects/services", $filter, $attrs, $joins);
+        $request->addHeader('X-HTTP-Method-Override', 'GET');
         $response = $request->send();
         if ($response->code === 200) {
-            $result = $this->decodeResult($response, "host");
+            $result = $this->decodeResult($response, "service");
         }
 
         return $result;
@@ -391,7 +379,7 @@ class Icinga2
      * @param Response $response
      * @param $type
      *
-     * @return array
+     * @return Icinga2ObjectInterface[]
      */
     public function decodeResult(Response $response, $type)
     {
@@ -399,33 +387,23 @@ class Icinga2
         $decodedResponse = json_decode($response, true);
         if (isset($decodedResponse["results"]) & sizeof($decodedResponse["results"]) > 0) {
             foreach ($decodedResponse["results"] as $icingaRow) {
+                $params = array(
+                    $icingaRow["name"],
+                    $icingaRow["type"],
+                    $this,
+                    $icingaRow["attrs"],
+                    $icingaRow["meta"],
+                    $icingaRow["joins"]
+                );
                 switch ($type) {
                     case "host":
-                        $icingaObject = new Host(
-                            $icingaRow["name"],
-                            $icingaRow["type"],
-                            $icingaRow["attrs"],
-                            $icingaRow["meta"],
-                            $icingaRow["joins"]
-                        );
+                        $icingaObject = new Host(...$params);
                         break;
                     case "service":
-                        $icingaObject = new Service(
-                            $icingaRow["name"],
-                            $icingaRow["type"],
-                            $icingaRow["attrs"],
-                            $icingaRow["meta"],
-                            $icingaRow["joins"]
-                        );
+                        $icingaObject = new Service(...$params);
                         break;
                     case "comment":
-                        $icingaObject = new Comment(
-                            $icingaRow["name"],
-                            $icingaRow["type"],
-                            $icingaRow["attrs"],
-                            $icingaRow["meta"],
-                            $icingaRow["joins"]
-                        );
+                        $icingaObject = new Comment(...$params);
                         break;
                     default:
                         $icingaObject = null;
@@ -438,4 +416,24 @@ class Icinga2
         }
         return $result;
     }
+
+    /**
+     * @param string $url
+     * @param array $filter
+     * @param array $attrs
+     * @param array $joins
+     *
+     * @return \Httpful\Request
+     */
+    public function buildRequest(string $url, $filter = [], $attrs = [], $joins = []): Request
+    {
+        $query = new Query($this->config["host"], $this->config["port"], $url, true, "POST");
+        $query->setFilters($filter);
+        $query->setAttributes($attrs);
+        $query->setJoins($joins);
+        $request = $this->authenticate($query->getRequest());
+        $request->addHeader("Accept", "application/json");
+        return $request;
+    }
+
 }

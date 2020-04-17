@@ -1,12 +1,11 @@
 # Icinga2 Api Client for PHP
 
-This is a simple api client for Icinga2 written in PHP. At the moment it has only
-read functions. In the future it will be capable of writing to Icinga2
-too.
+This is a simple api client for Icinga2 written in PHP. At the moment it has mostly
+read functions. The only writing function is Service::processCheckResult().
 
 ## Installation
 
-To use this client simply add it to your package requirements with composer:
+To use this client simply add it to your package requirements with Composer:
 
 ```lang=bash
 composer require rzuw/icinga2
@@ -19,13 +18,13 @@ The following settings should be set to make this client work.
 ```lang=php
 $config = array
 (
-    "host" => ""
-    "port" => ""
+    "host" => "",
+    "port" => "",
     // should be set when you decide for username and password login
-    "user" => ""
-    "password" => ""
+    "user" => "",
+    "password" => "",
     // should be used when you decide for certificate login
-    "cert" => ""
+    "cert" => "",
     "key" => ""
 );
 ```
@@ -129,23 +128,26 @@ curl --cert your-client-cn.crt --key your-client-cn.key --cacert ca.crt 'https:/
 
 ## Usage
 
-To use this client simply create an instance of Icinga2Api class and
+To use this client simply create an instance of Icinga2 class and
 load the configuration inside.
 
 ```lang=php
 $config = array
 (
-    "host" => ""
-    "port" => ""
+    "host" => "",
+    "port" => "",
     // should be set when you decide for username and password login
-    "user" => ""
-    "password" => ""
+    "user" => "",
+    "password" => "",
     // should be used when you decide for certificate login
-    "cert" => ""
+    "cert" => "",
     "key" => ""
 );
 $icinga2 = new Icinga2($config);
-$matchedHosts = $icinga2->getHosts(array("match(\"" . $this->hostData["hostname"] . "*\",host.name)"
+$matchedHosts = $icinga2->getHosts(array('match("' . $config["host"] . '", host.name)'));
+
+// "Host runs Linux."
+echo $matchedHosts[0]->getName() . ' runs ' . $matchedHosts[0]->getAttributes()['vars']['os'] .".\n";
 ```
 
 See the test cases for more examples.
